@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deep Live Cam - Web Version</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .card h2 {
+            margin-bottom: 20px;
+            color: #4a5568;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .upload-area {
+            border: 3px dashed #cbd5e0;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background-color: rgba(102, 126, 234, 0.05);
+        }
+
+        .upload-area.dragover {
+            border-color: #667eea;
+            background-color: rgba(102, 126, 234, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: #a0aec0;
+            margin-bottom: 15px;
+        }
+
+        .video-container {
+            position: relative;
+            border-radius: 15px;
+            overflow: hidden;
+            background: #000;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #videoElement, #processedVideo {
+            width: 100%;
+            height: auto;
+            max-height: 400px;
+            object-fit: cover;
+        }
+
+        .video-placeholder {
+            color: #a0aec0;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 140px;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(72, 187, 120, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f56565, #e53e3e);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(245, 101, 101, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .status {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+
+        .status.success {
+            background-color: #c6f6d5;
+            color: #22543d;
+            border-left: 4px solid #48bb78;
+        }
+
+        .status.error {
+            background-color: #fed7d7;
+            color: #742a2a;
+            border-left: 4px solid #f56565;
+        }
+
+        .source-preview {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .source-preview img {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 10px;
+            border: 3px solid #e2e8f0;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .controls {
+                justify-content: center;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+        }
+
+        .fps-counter {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-magic"></i> Deep Live Cam</h1>
+            <p>Real-time Face Swap Technology - Web Version</p>
+        </div>
+
+        <div class="main-content">
+            <!-- Source Face Upload Section -->
+            <div class="card">
+                <h2><i class="fas fa-user"></i> Source Face</h2>
+                <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <p><strong>Click to upload</strong> or drag and drop your source face image</p>
+                    <p style="margin-top: 10px; color: #718096;">Supports JPG, PNG, WebP formats</p>
+                </div>
+                
+                <input type="file" id="fileInput" accept="image/*" />
+                
+                <div class="controls">
+                    <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-upload"></i> Choose Image
+                    </button>
+                </div>
+                
+                <div id="sourceStatus"></div>
+                <div id="sourcePreview" class="source-preview"></div>
+            </div>
+
+            <!-- Live Camera Section -->
+            <div class="card">
+                <h2><i class="fas fa-video"></i> Live Camera</h2>
+                <div class="video-container">
+                    <video id="videoElement" autoplay muted style="display: none;"></video>
+                    <canvas id="canvas" style="display: none;"></canvas>
+                    <img id="processedVideo" style="display: none;" />
+                    <div id="videoPlaceholder" class="video-placeholder">
+                        <i class="fas fa-video" style="font-size: 3rem; margin-bottom: 15px; display: block;"></i>
+                        Camera feed will appear here
+                    </div>
+                    <div id="fpsCounter" class="fps-counter" style="display: none;">FPS: 0</div>
+                </div>
+                
+                <div class="controls">
+                    <button id="startCamera" class="btn btn-success">
+                        <i class="fas fa-play"></i> Start Camera
+                    </button>
+                    <button id="stopCamera" class="btn btn-danger" disabled>
+                        <i class="fas fa-stop"></i> Stop Camera
+                    </button>
+                    <button id="toggleProcessing" class="btn btn-primary" disabled>
+                        <i class="fas fa-magic"></i> Start Processing
+                    </button>
+                </div>
+                
+                <div id="cameraStatus"></div>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <div class="features">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <h3>Real-time Processing</h3>
+                <p>Experience instant face swapping with minimal latency using optimized algorithms.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h3>Privacy Focused</h3>
+                <p>All processing happens locally in your browser. Your data never leaves your device.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-mobile-alt"></i>
+                </div>
+                <h3>Cross-Platform</h3>
+                <p>Works on desktop, tablet, and mobile devices with modern web browsers.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-eye"></i>
+                </div>
+                <h3>High Quality</h3>
+                <p>Advanced face detection and blending algorithms for realistic results.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isProcessing = false;
+        let processingInterval = null;
+        let fpsInterval = null;
+        let frameCount = 0;
+        let lastFpsUpdate = Date.now();
+
+        // DOM elements
+        const fileInput = document.getElementById('fileInput');
+        const sourceStatus = document.getElementById('sourceStatus');
+        const sourcePreview = document.getElementById('sourcePreview');
+        const videoElement = document.getElementById('videoElement');
+        const canvas = document.getElementById('canvas');
+        const processedVideo = document.getElementById('processedVideo');
+        const videoPlaceholder = document.getElementById('videoPlaceholder');
+        const fpsCounter = document.getElementById('fpsCounter');
+        const startCameraBtn = document.getElementById('startCamera');
+        const stopCameraBtn = document.getElementById('stopCamera');
+        const toggleProcessingBtn = document.getElementById('toggleProcessing');
+        const cameraStatus = document.getElementById('cameraStatus');
+        const uploadArea = document.querySelector('.upload-area');
+
+        // Canvas context
+        const ctx = canvas.getContext('2d');
+
+        // File upload handling
+        fileInput.addEventListener('change', handleFileUpload);
+        
+        // Drag and drop handling
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                handleFileUpload();
+            }
+        });
+
+        // Camera controls
+        startCameraBtn.addEventListener('click', startCamera);
+        stopCameraBtn.addEventListener('click', stopCamera);
+        toggleProcessingBtn.addEventListener('click', toggleProcessing);
+
+        function showStatus(element, message, type) {
+            element.innerHTML = `<div class="status ${type}">${message}</div>`;
+            setTimeout(() => {
+                element.innerHTML = '';
+            }, 5000);
+        }
+
+        function handleFileUpload() {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    // Display preview
+                    sourcePreview.innerHTML = `
+                        <h4>Source Face Preview:</h4>
+                        <img src="${e.target.result}" alt="Source face" />
+                    `;
+
+                    // Upload to server
+                    uploadSourceFace(e.target.result);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function uploadSourceFace(imageData) {
+            try {
+                showStatus(sourceStatus, 'Processing source face...', 'success');
+                
+                const response = await fetch('/upload_source', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ image: imageData })
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    showStatus(sourceStatus, '✅ Source face loaded successfully!', 'success');
+                } else {
+                    showStatus(sourceStatus, `❌ ${result.message}`, 'error');
+                }
+            } catch (error) {
+                showStatus(sourceStatus, `❌ Error uploading image: ${error.message}`, 'error');
+            }
+        }
+
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: { ideal: 640 },
+                        height: { ideal: 480 },
+                        frameRate: { ideal: 30 }
+                    } 
+                });
+                
+                videoElement.srcObject = stream;
+                videoElement.style.display = 'block';
+                videoPlaceholder.style.display = 'none';
+                
+                startCameraBtn.disabled = true;
+                stopCameraBtn.disabled = false;
+                toggleProcessingBtn.disabled = false;
+                
+                showStatus(cameraStatus, '✅ Camera started successfully!', 'success');
+                
+                // Set up canvas
+                videoElement.addEventListener('loadedmetadata', () => {
+                    canvas.width = videoElement.videoWidth;
+                    canvas.height = videoElement.videoHeight;
+                });
+                
+            } catch (error) {
+                showStatus(cameraStatus, `❌ Error accessing camera: ${error.message}`, 'error');
+            }
+        }
+
+        function stopCamera() {
+            const stream = videoElement.srcObject;
+            if (stream) {
+                const tracks = stream.getTracks();
+                tracks.forEach(track => track.stop());
+            }
+            
+            videoElement.style.display = 'none';
+            processedVideo.style.display = 'none';
+            videoPlaceholder.style.display = 'block';
+            fpsCounter.style.display = 'none';
+            
+            startCameraBtn.disabled = false;
+            stopCameraBtn.disabled = true;
+            toggleProcessingBtn.disabled = true;
+            
+            if (isProcessing) {
+                toggleProcessing();
+            }
+            
+            showStatus(cameraStatus, 'Camera stopped', 'success');
+        }
+
+        function toggleProcessing() {
+            if (isProcessing) {
+                // Stop processing
+                clearInterval(processingInterval);
+                clearInterval(fpsInterval);
+                isProcessing = false;
+                toggleProcessingBtn.innerHTML = '<i class="fas fa-magic"></i> Start Processing';
+                toggleProcessingBtn.classList.remove('btn-danger');
+                toggleProcessingBtn.classList.add('btn-primary');
+                fpsCounter.style.display = 'none';
+                
+                // Show original video
+                videoElement.style.display = 'block';
+                processedVideo.style.display = 'none';
+            } else {
+                // Start processing
+                isProcessing = true;
+                toggleProcessingBtn.innerHTML = '<div class="loading"></div> Processing...';
+                toggleProcessingBtn.classList.remove('btn-primary');
+                toggleProcessingBtn.classList.add('btn-danger');
+                fpsCounter.style.display = 'block';
+                
+                // Hide original video, show processed
+                videoElement.style.display = 'none';
+                processedVideo.style.display = 'block';
+                
+                // Start processing frames
+                processingInterval = setInterval(processFrame, 100); // ~10 FPS
+                
+                // Start FPS counter
+                frameCount = 0;
+                lastFpsUpdate = Date.now();
+                fpsInterval = setInterval(updateFPS, 1000);
+            }
+        }
+
+        async function processFrame() {
+            if (!videoElement.videoWidth || !videoElement.videoHeight) return;
+            
+            // Draw current frame to canvas
+            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+            
+            // Get frame data
+            const frameData = canvas.toDataURL('image/jpeg', 0.8);
+            
+            try {
+                const response = await fetch('/process_frame', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ frame: frameData })
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    processedVideo.src = result.processed_frame;
+                    frameCount++;
+                }
+            } catch (error) {
+                console.error('Error processing frame:', error);
+            }
+        }
+
+        function updateFPS() {
+            const now = Date.now();
+            const fps = Math.round(frameCount / ((now - lastFpsUpdate) / 1000));
+            fpsCounter.textContent = `FPS: ${fps}`;
+            frameCount = 0;
+            lastFpsUpdate = now;
+        }
+    </script>
+</body>
+</html>
