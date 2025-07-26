@@ -11,13 +11,20 @@ import subprocess
 def check_dependencies():
     """Check if required dependencies are installed"""
     required_packages = [
-        'flask', 'opencv-python', 'numpy', 'pillow', 'flask-cors'
+        'flask', 'flask_cors', 'cv2', 'numpy', 'PIL'
     ]
     
     missing_packages = []
     for package in required_packages:
         try:
-            __import__(package.replace('-', '_'))
+            if package == 'cv2':
+                import cv2
+            elif package == 'PIL':
+                from PIL import Image
+            elif package == 'flask_cors':
+                from flask_cors import CORS
+            else:
+                __import__(package)
         except ImportError:
             missing_packages.append(package)
     
