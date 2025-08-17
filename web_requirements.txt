@@ -1,0 +1,7 @@
+Flask==3.0.0
+Flask-CORS==4.0.0
+opencv-python==4.10.0.84
+numpy>=1.23.5,<2
+Pillow==11.1.0
+gunicorn==21.2.0
+requests==2.31.0
